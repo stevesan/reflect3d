@@ -48,6 +48,15 @@ namespace Lobo
 
             return lsPlane;
         }
+
+        public static GameObject ClonePrefab( GameObject prefab, Transform parent )
+        {
+            GameObject clone = (GameObject)GameObject.Instantiate( prefab, prefab.transform.position, prefab.transform.rotation );
+            clone.transform.parent = parent;
+            prefab.SetActive(false);
+            clone.SetActive(true);
+            return clone;
+        }
     }
 
 }

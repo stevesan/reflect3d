@@ -4,7 +4,9 @@ using Lobo;
 
 public class Reflectable : MonoBehaviour
 {
-    public MeshFilter reflectionHost;
+    public MeshFilter reflectionPreviewPrefab;
+
+    private MeshFilter reflectionPreview;
 
     private ConvexPolygonMesh currentRealMesh = new ConvexPolygonMesh();
     private ConvexPolygonMesher converter = new ConvexPolygonMesher();
@@ -16,11 +18,15 @@ public class Reflectable : MonoBehaviour
 
     public void OnReflectingBegin(MirrorGun gun)
     {
+        GameObject obj = Utils.ClonePrefab( reflectionPreviewPrefab.gameObject, this.transform );
+        obj.transform.localPosition = Vector3.zero;
+        reflectionPreview = obj.GetComponent<MeshFilter>();
     }
 
     public void OnReflectingEnd(MirrorGun gun, bool isConfirm)
     {
-        reflectionHost.mesh.Clear();
+        Destroy( reflectionPreview.gameObject );
+        Destroy( GetComponent<MeshCollider>() );    // force recreate, so the collider updates with the new mesh
 
         if( isConfirm )
         {
@@ -54,7 +60,14 @@ public class Reflectable : MonoBehaviour
 
         ConvexPolygonMesh negHalf = posHalf.Clone();
         negHalf.Reflect( lsPlane );
-        converter.Push( negHalf.polys, reflectionHost.mesh );
+        converter.Push( negHalf.polys, reflectionPreview.mesh );
     }
 
+
+    public void Update()
+    {
+        // Update mesh collider
+        if( GetComponent<MeshCollider>() == null )
+            gameObject.AddComponent<MeshCollider>();
+    }
 }

@@ -61,6 +61,10 @@ namespace Lobo
                 float dist = plane.GetDistanceToPoint( points[i] );
                 points[i] -= plane.normal * 2 * dist;
             }
+
+            // We gotta reverse the winding order
+            points.Reverse();
+            UpdateCachedNormal();
         }
         
         public void Translate( Vector3 d )
