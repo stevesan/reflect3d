@@ -27,7 +27,6 @@ public class Reflectable : MonoBehaviour
     {
         if( reflectionPreview != null )
             Destroy( reflectionPreview.gameObject );
-        Destroy( GetComponent<MeshCollider>() );    // force recreate, so the collider updates with the new mesh
 
         if( isConfirm )
         {
@@ -43,6 +42,8 @@ public class Reflectable : MonoBehaviour
 
             posHalf.ShallowAppend(negHalf);
             currentRealMesh = posHalf;
+
+            Destroy( GetComponent<MeshCollider>() );    // force recreate, so the collider updates with the new mesh
         }
 
         converter.Push( currentRealMesh.polys, GetComponent<MeshFilter>().mesh );

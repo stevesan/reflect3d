@@ -35,22 +35,23 @@ public class MirrorGun : MonoBehaviour
 
     void EnterPreviewMode()
     {
-        paintDot.transform.localScale = new Vector3(2f, 2f, 2f);
         foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
             target.OnReflectingBegin(this);
     }
 
     void ExitPreviewMode(bool commit)
     {
-        paintDot.transform.localScale = new Vector3(0.0f, 0.0f, 0.0f);
         foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
             target.OnReflectingEnd(this, commit);
     }
 
     void Update()
     {
+        if( !Screen.lockCursor )
+            return;
+
         // Check button input
-        if( Screen.lockCursor && Input.GetMouseButtonDown(0) )
+        if( Input.GetMouseButtonDown(0) )
         {
             if( state == "idle" )
             {
@@ -63,7 +64,7 @@ public class MirrorGun : MonoBehaviour
                 state = "idle";
             }
         }
-        else if( Screen.lockCursor && Input.GetMouseButtonDown(1) )
+        else if( Input.GetMouseButtonUp(0) )
         {
             if( state == "preview" )
             {
@@ -71,21 +72,26 @@ public class MirrorGun : MonoBehaviour
                 state = "idle";
             }
         }
+        else if( Input.GetButtonDown("Commit") && state == "preview" )
+        {
+            ExitPreviewMode(true);
+            state = "idle";
+        }
     }
 	
 	void LateUpdate()
     {
-        if( state == "preview" )
+        Ray ray = Camera.main.ViewportPointToRay( new Vector3(0.5f,0.5f,0) );
+        RaycastHit hit = new RaycastHit();
+
+        if( Physics.Raycast( ray, out hit ) )
         {
-            Ray ray = Camera.main.ViewportPointToRay( new Vector3(0.5f,0.5f,0) );
-            RaycastHit hit = new RaycastHit();
+            paintDot.SetActive(true);
+            paintDot.transform.position = hit.point;
+            paintDot.transform.up = hit.normal;
 
-            if( Physics.Raycast( ray, out hit ) )
+            if( state == "preview" )
             {
-                paintDot.SetActive(true);
-                paintDot.transform.position = hit.point;
-                paintDot.transform.up = hit.normal;
-
                 if( !hadValidTarget )
                     EnterPreviewMode();
 
@@ -95,7 +101,12 @@ public class MirrorGun : MonoBehaviour
                 foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
                     target.OnReflectingMotion(this);
             }
-            else
+        }
+        else
+        {
+            paintDot.SetActive(false);
+
+            if( state == "preview" )
             {
                 if( hadValidTarget )
                     ExitPreviewMode(false);
