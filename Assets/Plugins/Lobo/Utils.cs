@@ -6,6 +6,12 @@ namespace Lobo
 {
     public static class Utils
     {
+        public static void Assert( bool success, string msg = "see log" )
+        {
+            if( !success )
+                Debug.LogError("Assert failed: "+msg);
+        }
+
         public static T GetWrapped<T>( this IList<T> list, int i )
         {
             while( i < 0 )

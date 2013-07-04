@@ -139,8 +139,21 @@ namespace Lobo
 
         public void Clip( Plane lsPlane )
         {
-            foreach( ConvexPolygon p in polys )
-                p.Clip(lsPlane);
+            List<int> toRemove = new List<int>();
+
+            for( int i = 0; i < polys.Count; i++ )
+            {
+                polys[i].Clip(lsPlane);
+
+                if( polys[i].points.Count == 0 )
+                    toRemove.Add(i);
+            }
+
+            // Remove in reverse
+            for( int i = toRemove.Count-1; i >= 0; i-- )
+            {
+                polys.RemoveAt(toRemove[i]);
+            }
         }
 
         public void Reflect( Plane lsPlane )
@@ -159,6 +172,12 @@ namespace Lobo
                 clone.polys.Add( p.Clone() );
 
             return clone;
+        }
+
+        public void ShallowAppend( ConvexPolygonMesh other )
+        {
+            foreach( ConvexPolygon p in other.polys )
+                polys.Add(p);
         }
     }
 
