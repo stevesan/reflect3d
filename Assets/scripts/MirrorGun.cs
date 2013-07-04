@@ -20,55 +20,87 @@ public class MirrorGun : MonoBehaviour
     private Plane reflectingPlane;
     private string state = "idle";
 
+    private bool hadValidTarget = false;
+
     void Awake()
     {
         Utils.Assert( main == null );
         main = this;
     }
 
+    void Start()
+    {
+        state = "idle";
+    }
+
+    void EnterPreviewMode()
+    {
+        paintDot.transform.localScale = new Vector3(2f, 2f, 2f);
+        foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
+            target.OnReflectingBegin(this);
+    }
+
+    void ExitPreviewMode(bool commit)
+    {
+        paintDot.transform.localScale = new Vector3(0.0f, 0.0f, 0.0f);
+        foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
+            target.OnReflectingEnd(this, commit);
+    }
+
     void Update()
     {
         // Check button input
-        if( Input.GetMouseButtonDown(0) )
+        if( Screen.lockCursor && Input.GetMouseButtonDown(0) )
         {
             if( state == "idle" )
             {
+                EnterPreviewMode();
                 state = "preview";
-                paintDot.transform.localScale = new Vector3(2f, 2f, 2f);
-                foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
-                    target.OnReflectingBegin(this);
             }
             else
             {
+                ExitPreviewMode(true);
                 state = "idle";
-                paintDot.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-                foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
-                    target.OnReflectingEnd(this, true);
+            }
+        }
+        else if( Screen.lockCursor && Input.GetMouseButtonDown(1) )
+        {
+            if( state == "preview" )
+            {
+                ExitPreviewMode(false);
+                state = "idle";
             }
         }
     }
 	
 	void LateUpdate()
     {
-        Ray ray = Camera.main.ViewportPointToRay( new Vector3(0.5f,0.5f,0) );
-        RaycastHit hit = new RaycastHit();
-
-        if( Physics.Raycast( ray, out hit ) )
+        if( state == "preview" )
         {
-            paintDot.SetActive(true);
-            paintDot.transform.position = hit.point;
-            paintDot.transform.up = hit.normal;
+            Ray ray = Camera.main.ViewportPointToRay( new Vector3(0.5f,0.5f,0) );
+            RaycastHit hit = new RaycastHit();
 
-            if( state == "preview" )
+            if( Physics.Raycast( ray, out hit ) )
             {
+                paintDot.SetActive(true);
+                paintDot.transform.position = hit.point;
+                paintDot.transform.up = hit.normal;
+
+                if( !hadValidTarget )
+                    EnterPreviewMode();
+
+                hadValidTarget = true;
+
                 reflectingPlane = new Plane( hit.normal, hit.point );
                 foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
                     target.OnReflectingMotion(this);
             }
-        }
-        else
-        {
-            paintDot.SetActive(false);
+            else
+            {
+                if( hadValidTarget )
+                    ExitPreviewMode(false);
+                hadValidTarget = false;
+            }
         }
 	}
 

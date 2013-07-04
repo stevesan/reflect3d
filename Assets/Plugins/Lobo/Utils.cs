@@ -49,6 +49,13 @@ namespace Lobo
             return lsPlane;
         }
 
+        public static void IdentifyLocalTransform( GameObject obj )
+        {
+            obj.transform.localPosition = Vector3.zero;
+            obj.transform.localScale = new Vector3(1,1,1);
+            obj.transform.localEulerAngles = new Vector3(0,0,0);
+        }
+
         public static GameObject ClonePrefab( GameObject prefab, Transform parent )
         {
             GameObject clone = (GameObject)GameObject.Instantiate( prefab, prefab.transform.position, prefab.transform.rotation );

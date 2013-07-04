@@ -19,13 +19,14 @@ public class Reflectable : MonoBehaviour
     public void OnReflectingBegin(MirrorGun gun)
     {
         GameObject obj = Utils.ClonePrefab( reflectionPreviewPrefab.gameObject, this.transform );
-        obj.transform.localPosition = Vector3.zero;
+        Utils.IdentifyLocalTransform(obj);
         reflectionPreview = obj.GetComponent<MeshFilter>();
     }
 
     public void OnReflectingEnd(MirrorGun gun, bool isConfirm)
     {
-        Destroy( reflectionPreview.gameObject );
+        if( reflectionPreview != null )
+            Destroy( reflectionPreview.gameObject );
         Destroy( GetComponent<MeshCollider>() );    // force recreate, so the collider updates with the new mesh
 
         if( isConfirm )
