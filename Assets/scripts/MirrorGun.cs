@@ -55,8 +55,8 @@ public class MirrorGun : MonoBehaviour
         {
             if( state == "idle" )
             {
-                EnterPreviewMode();
                 state = "preview";
+                hadValidTarget = false;
             }
             else
             {

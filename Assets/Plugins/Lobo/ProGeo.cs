@@ -261,6 +261,7 @@ namespace Lobo
             //----------------------------------------
             mesh.Clear();
             mesh.vertices = verts;
+            mesh.uv = new Vector2[ verts.Length ];
             mesh.normals = normals;
             mesh.triangles = triVerts;
 

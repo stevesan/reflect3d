@@ -8,19 +8,32 @@ public class Reflectable : MonoBehaviour
 
     private MeshFilter reflectionPreview;
 
-    private ConvexPolygonMesh currentRealMesh = new ConvexPolygonMesh();
+    private ConvexPolygonMesh currentRealMesh = null;
     private ConvexPolygonMesher converter = new ConvexPolygonMesher();
 
-    void Awake()
+    void Start()
     {
-        currentRealMesh.polys = ConvexPolygon.FromUnityMesh( GetComponent<MeshFilter>().mesh );
+        if( currentRealMesh == null )
+        {
+            currentRealMesh = new ConvexPolygonMesh();
+            Debug.Log("converting from unity mesh");
+            currentRealMesh.polys = ConvexPolygon.FromUnityMesh( GetComponent<MeshFilter>().mesh );
+        }
     }
 
     public void OnReflectingBegin(MirrorGun gun)
     {
-        GameObject obj = Utils.ClonePrefab( reflectionPreviewPrefab.gameObject, this.transform );
+        GameObject obj = Utils.ClonePrefab( reflectionPreviewPrefab.gameObject, transform );
+        obj.name = gameObject.name + "-preview";
         Utils.IdentifyLocalTransform(obj);
+        obj.transform.parent = transform.parent;
         reflectionPreview = obj.GetComponent<MeshFilter>();
+    }
+
+    public void RecreateCollider()
+    {
+        Destroy( GetComponent<MeshCollider>() );
+        // Recreate it during next update - for some reason, this is necessary..not sure why.
     }
 
     public void OnReflectingEnd(MirrorGun gun, bool isConfirm)
@@ -30,25 +43,37 @@ public class Reflectable : MonoBehaviour
 
         if( isConfirm )
         {
-            // Append negative half to positive half
-            ConvexPolygonMesh posHalf = currentRealMesh.Clone();
+            // Do the clip
             Plane lsPlane = transform.InverseTransformPlane( gun.GetReflectingPlane() );
-            posHalf.Clip( lsPlane );
+            currentRealMesh.Clip( lsPlane );
 
-            // TODO we could just use the same mesh, but transform it to be reflected along the plane..
+            if( currentRealMesh.polys.Count <= 0 )
+            {
+                Destroy(gameObject);
+            }
+            else
+            {
+                converter.Push( currentRealMesh.polys, GetComponent<MeshFilter>().mesh );
+                RecreateCollider();
 
-            ConvexPolygonMesh negHalf = posHalf.Clone();
-            negHalf.Reflect( lsPlane );
+                // Create negative half clone
+                GameObject negObj = Utils.ClonePrefab( gameObject, transform.parent );
+                ConvexPolygonMesh negMesh = currentRealMesh.Clone();
+                negMesh.Reflect( lsPlane );
+                Reflectable re = negObj.GetComponent<Reflectable>();
+                re.currentRealMesh = negMesh;
+                re.converter.Push( negMesh.polys, negObj.GetComponent<MeshFilter>().mesh );
+                re.RecreateCollider();
 
-            posHalf.ShallowAppend(negHalf);
-            currentRealMesh = posHalf;
+                gameObject.SetActive(true);
+            }
 
-            Destroy( GetComponent<MeshCollider>() );    // force recreate, so the collider updates with the new mesh
         }
-
-        converter.Push( currentRealMesh.polys, GetComponent<MeshFilter>().mesh );
-
-        Debug.Log("current real mesh has "+currentRealMesh.polys.Count+ " polys");
+        else
+        {
+            // restore original mesh
+            converter.Push( currentRealMesh.polys, GetComponent<MeshFilter>().mesh );
+        }
     }
 
     public void OnReflectingMotion(MirrorGun gun)
@@ -66,7 +91,8 @@ public class Reflectable : MonoBehaviour
     }
 
 
-    public void Update()
+    // Important that this is done in LateUpdate, since one-frame off could have players falling through
+    public void LateUpdate()
     {
         // Update mesh collider
         if( GetComponent<MeshCollider>() == null )
