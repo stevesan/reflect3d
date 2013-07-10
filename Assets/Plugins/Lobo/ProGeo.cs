@@ -8,19 +8,7 @@ namespace Lobo
     {
         public List<Vector3> points = new List<Vector3>();
 
-        public Vector3 cachedNormal;
-
         public int GetNumPoints() { return points.Count; }
-
-        public void UpdateCachedNormal()
-        {
-            if( points.Count >= 3 )
-            {
-                Vector3 e0 = points[1] - points[0];
-                Vector3 e1 = points[2] - points[0];
-                cachedNormal = Vector3.Cross( e0, e1 ).normalized;
-            }
-        }
 
         // This will wrap the index safely, even if i is negative
         public Vector3 GetPoint(int i)
@@ -32,19 +20,22 @@ namespace Lobo
         //  Keeps the polygon on the positive side of the given plane
         //  TODO: UV coordinates
         //----------------------------------------
-        public void Clip( Plane plane )
+        public void Clip( Plane wsPlane, Transform meshTrans )
         {
             List<Vector3> newPoints = new List<Vector3>();
 
             for( int i = 0; i < points.Count; i++ )
             {
-                bool currSide = plane.GetSide( GetPoint(i) );
-                bool prevSide = plane.GetSide( GetPoint(i-1) );
+                Vector3 wsCurr = meshTrans.TransformPoint(GetPoint(i));
+                Vector3 wsPrev = meshTrans.TransformPoint(GetPoint(i-1));
+                bool currSide = wsPlane.GetSide( wsCurr );
+                bool prevSide = wsPlane.GetSide( wsPrev );
 
                 if( currSide != prevSide )
                 {
                     // intersection
-                    newPoints.Add( Utils.GetIntersection( plane, GetPoint(i-1), GetPoint(i) ) );
+                    newPoints.Add( meshTrans.InverseTransformPoint(
+                                Utils.GetIntersection( wsPlane, wsPrev, wsCurr ) ) );
                 }
 
                 if( currSide )
@@ -54,17 +45,18 @@ namespace Lobo
             points = newPoints;
         }
 
-        public void Reflect( Plane plane )
+        public void Reflect( Plane wsPlane, Transform meshTrans )
         {
             for( int i = 0; i < points.Count; i++ )
             {
-                float dist = plane.GetDistanceToPoint( points[i] );
-                points[i] -= plane.normal * 2 * dist;
+                Vector3 wsPt = meshTrans.TransformPoint( points[i] );
+                float dist = wsPlane.GetDistanceToPoint( wsPt );
+                Vector3 wsNewPt = wsPt - wsPlane.normal * 2 * dist;
+                points[i] = meshTrans.InverseTransformPoint(wsNewPt);
             }
 
             // We gotta reverse the winding order
             points.Reverse();
-            UpdateCachedNormal();
         }
         
         public void Translate( Vector3 d )
@@ -87,10 +79,6 @@ namespace Lobo
                 p.points.Add( uMesh.vertices[ uMesh.triangles[i] ] );
             }
 
-            // Update all normals
-            foreach( ConvexPolygon p in polys )
-                p.UpdateCachedNormal();
-
             return polys;
         }
     }
@@ -104,8 +92,6 @@ namespace Lobo
             foreach( Vector3 p in points )
                 clone.points.Add(Vector3.zero+p);
 
-            clone.cachedNormal = cachedNormal;
-
             return clone;
         }
 
@@ -117,7 +103,6 @@ namespace Lobo
             poly.points.Add( new Vector3(1.5f, 1, 0) );
             poly.points.Add( new Vector3(0.5f, 1.5f, 0) );
             poly.points.Add( new Vector3(-0.5f, 1, 0) );
-            poly.UpdateCachedNormal();
 
             return poly;
         }
@@ -141,13 +126,13 @@ namespace Lobo
     {
         public List<ConvexPolygon> polys;
 
-        public void Clip( Plane lsPlane )
+        public void Clip( Plane wsPlane, Transform trans )
         {
             List<int> toRemove = new List<int>();
 
             for( int i = 0; i < polys.Count; i++ )
             {
-                polys[i].Clip(lsPlane);
+                polys[i].Clip(wsPlane, trans);
 
                 if( polys[i].points.Count == 0 )
                     toRemove.Add(i);
@@ -160,17 +145,16 @@ namespace Lobo
             }
         }
 
-        public void Reflect( Plane lsPlane )
+        public void Reflect( Plane wsPlane, Transform trans )
         {
             foreach( ConvexPolygon p in polys )
-                p.Reflect(lsPlane);
+                p.Reflect(wsPlane, trans);
         }
 
         public ConvexPolygonMesh Clone()
         {
             ConvexPolygonMesh clone = new ConvexPolygonMesh();
-            clone.polys = new List<ConvexPolygon>();
-            clone.polys.Capacity = polys.Count;
+            clone.polys = new List<ConvexPolygon>(polys.Count);
 
             foreach( ConvexPolygon p in polys )
                 clone.polys.Add( p.Clone() );
@@ -192,7 +176,6 @@ namespace Lobo
     public class ConvexPolygonMesher
     {
         public Vector3[] verts;
-        public Vector3[] normals;
         public int[] triVerts;
 
         //----------------------------------------
@@ -215,9 +198,6 @@ namespace Lobo
             if( verts == null || verts.Length < numVerts )
                 verts = new Vector3[ numVerts ];
 
-            if( normals == null || normals.Length < numVerts )
-                normals = new Vector3[ numVerts ];
-
             if( triVerts == null || triVerts.Length < numVerts )
                 triVerts = new int[numVerts];
 
@@ -238,7 +218,6 @@ namespace Lobo
                 for( int j = 0; j < poly.GetNumPoints(); j++ )
                 {
                     verts[ currVert ] = poly.GetPoint(j);
-                    normals[ currVert ] = poly.cachedNormal;
                     currVert++;
                 }
 
@@ -262,10 +241,10 @@ namespace Lobo
             mesh.Clear();
             mesh.vertices = verts;
             mesh.uv = new Vector2[ verts.Length ];
-            mesh.normals = normals;
             mesh.triangles = triVerts;
 
             mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
             mesh.MarkDynamic();
         }
     }

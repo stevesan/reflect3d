@@ -25,12 +25,11 @@ public class ProGeoTester2 : MonoBehaviour
             Debug.Log("clipping mesh");
 
             Plane wsPlane = new Plane( new Vector3(0.5f, 0.5f, 0f).normalized, new Vector3(0f, planeY, 0f) );
-            Plane lsPlane = transform.InverseTransformPlane(wsPlane);
-            mesh.Clip( lsPlane );
+            mesh.Clip( wsPlane, transform );
             converter.Push( mesh.polys, GetComponent<MeshFilter>().mesh );
             
             ConvexPolygonMesh relfection = mesh.Clone();
-            relfection.Reflect( lsPlane );
+            relfection.Reflect( wsPlane, transform );
             converter.Push( relfection.polys, reflectionHost.mesh );
 
             planeY += 0.05f * Time.deltaTime;

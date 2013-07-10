@@ -21,7 +21,7 @@ public class ProGeoTester : MonoBehaviour
 
             Plane plane = new Plane( Vector3.up, new Vector3( 0f, planeY, 0f ) );
             foreach( ConvexPolygon p in mesh )
-                p.Clip(plane);
+                p.Clip(plane, transform);
 
             mesher.Push( mesh, GetComponent<MeshFilter>().mesh );
 

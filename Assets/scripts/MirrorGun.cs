@@ -87,7 +87,7 @@ public class MirrorGun : MonoBehaviour
         if( Physics.Raycast( ray, out hit ) )
         {
             paintDot.SetActive(true);
-            paintDot.transform.position = hit.point;
+            paintDot.transform.position = hit.point + hit.normal*0.01f;
             paintDot.transform.up = hit.normal;
 
             if( state == "preview" )

@@ -44,8 +44,9 @@ public class Reflectable : MonoBehaviour
         if( isConfirm )
         {
             // Do the clip
-            Plane lsPlane = transform.InverseTransformPlane( gun.GetReflectingPlane() );
-            currentRealMesh.Clip( lsPlane );
+            Plane wsPlane = gun.GetReflectingPlane();
+            //Plane lsPlane = transform.InverseTransformPlane( gun.GetReflectingPlane() );
+            currentRealMesh.Clip( wsPlane, transform );
 
             if( currentRealMesh.polys.Count <= 0 )
             {
@@ -59,7 +60,7 @@ public class Reflectable : MonoBehaviour
                 // Create negative half clone
                 GameObject negObj = Utils.ClonePrefab( gameObject, transform.parent );
                 ConvexPolygonMesh negMesh = currentRealMesh.Clone();
-                negMesh.Reflect( lsPlane );
+                negMesh.Reflect( wsPlane, transform );
                 Reflectable re = negObj.GetComponent<Reflectable>();
                 re.currentRealMesh = negMesh;
                 re.converter.Push( negMesh.polys, negObj.GetComponent<MeshFilter>().mesh );
@@ -79,14 +80,13 @@ public class Reflectable : MonoBehaviour
     public void OnReflectingMotion(MirrorGun gun)
     {
         ConvexPolygonMesh posHalf = currentRealMesh.Clone();
-        Plane lsPlane = transform.InverseTransformPlane( gun.GetReflectingPlane() );
-        posHalf.Clip( lsPlane );
-        converter.Push( posHalf.polys, GetComponent<MeshFilter>().mesh );
+        posHalf.Clip( gun.GetReflectingPlane(), transform );
+        converter.Push( posHalf.polys, GetComponent<MeshFilter>().mesh );   // ~1ms
 
         // TODO we could just use the same mesh, but transform it to be reflected along the plane..
 
         ConvexPolygonMesh negHalf = posHalf.Clone();
-        negHalf.Reflect( lsPlane );
+        negHalf.Reflect( gun.GetReflectingPlane(), transform );
         converter.Push( negHalf.polys, reflectionPreview.mesh );
     }
 
