@@ -29,4 +29,8 @@ public class Player : MonoBehaviour
         numGoalsGot++;
         Destroy(goal.gameObject);
     }
+
+    public void OnExternalVelocity()
+    {
+    }
 }

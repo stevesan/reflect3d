@@ -38,17 +38,6 @@ namespace Lobo
                     filter.mesh.bounds.min );
         }
 
-        public static Plane InverseTransformPlane( this Transform xform, Plane wsPlane )
-        {
-            Vector3 wsPoint = -1f * wsPlane.normal * wsPlane.distance;
-
-            Plane lsPlane = new Plane(
-                    xform.InverseTransformDirection( wsPlane.normal ),
-                    xform.InverseTransformPoint( wsPoint ));
-
-            return lsPlane;
-        }
-
         public static void IdentifyLocalTransform( GameObject obj )
         {
             obj.transform.localPosition = Vector3.zero;

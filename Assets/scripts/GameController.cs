@@ -10,6 +10,7 @@ public class GameController : MonoBehaviour
     public string hubName = "0-hub";
 
     private LevelRoot activeLevel;
+    private string lastLevelName = "";
 
     void Awake()
     {
@@ -33,6 +34,8 @@ public class GameController : MonoBehaviour
         activeLevel = Utils.ClonePrefab(level.gameObject).GetComponent<LevelRoot>();
         Player.main.transform.position = activeLevel.playerStart.position;
         Player.main.transform.rotation = activeLevel.playerStart.rotation;
+        Player.main.GetComponent<CharacterMotor>().SetVelocity(Vector3.zero);
+        lastLevelName = level.gameObject.name;
     }
 
     public LevelRoot GetActiveLevel()
@@ -46,4 +49,12 @@ public class GameController : MonoBehaviour
         ActivateLevel(hubName);
         return null;
 	}
+
+    void Update()
+    {
+        if( Input.GetKeyDown("r") )
+        {
+            ActivateLevel(lastLevelName);
+        }
+    }
 }

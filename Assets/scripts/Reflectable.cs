@@ -14,7 +14,6 @@ public class Reflectable : MonoBehaviour
         if( currentRealMesh == null )
         {
             currentRealMesh = new ConvexPolygonMesh();
-            Debug.Log("converting from unity mesh");
             currentRealMesh.polys = ConvexPolygon.FromUnityMesh( GetComponent<MeshFilter>().mesh );
         }
     }
@@ -24,7 +23,7 @@ public class Reflectable : MonoBehaviour
         // Parent it to us first, ID it, then unparent it. So it inherits out transform.
         GameObject obj = Utils.ClonePrefab( PreviewPrefab.main.gameObject, transform );
         Utils.IdentifyLocalTransform(obj);
-        obj.transform.parent = transform.parent;
+        //obj.transform.parent = transform.parent;
         obj.name = gameObject.name + "-preview";
         reflectionPreview = obj.GetComponent<MeshFilter>();
     }
@@ -38,7 +37,10 @@ public class Reflectable : MonoBehaviour
     public void OnReflectingEnd(MirrorGun gun, bool isConfirm)
     {
         if( reflectionPreview != null )
+        {
+            reflectionPreview.transform.parent = null;  // so when we clone ourselves to commit, we don't get the preview child
             Destroy( reflectionPreview.gameObject );
+        }
 
         if( isConfirm )
         {
@@ -86,7 +88,6 @@ public class Reflectable : MonoBehaviour
         ConvexPolygonMesh negHalf = posHalf.Clone();
         negHalf.Reflect( gun.GetReflectingPlane(), transform );
         converter.Push( negHalf.polys, reflectionPreview.mesh );
-        Debug.Log("pushed to preview");
     }
 
     // Important that this is done in LateUpdate, since one-frame late could have players falling through

@@ -22,7 +22,6 @@ public class ProGeoTester2 : MonoBehaviour
         while( true )
         {
             yield return new WaitForSeconds(0.01f);
-            Debug.Log("clipping mesh");
 
             Plane wsPlane = new Plane( new Vector3(0.5f, 0.5f, 0f).normalized, new Vector3(0f, planeY, 0f) );
             mesh.Clip( wsPlane, transform );
@@ -34,7 +33,5 @@ public class ProGeoTester2 : MonoBehaviour
 
             planeY += 0.05f * Time.deltaTime;
         }
-
-        yield return null;
     }
 }
