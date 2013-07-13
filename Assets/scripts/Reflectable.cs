@@ -4,8 +4,6 @@ using Lobo;
 
 public class Reflectable : MonoBehaviour
 {
-    public MeshFilter reflectionPreviewPrefab;
-
     private MeshFilter reflectionPreview;
 
     private ConvexPolygonMesh currentRealMesh = null;
@@ -23,10 +21,11 @@ public class Reflectable : MonoBehaviour
 
     public void OnReflectingBegin(MirrorGun gun)
     {
-        GameObject obj = Utils.ClonePrefab( reflectionPreviewPrefab.gameObject, transform );
-        obj.name = gameObject.name + "-preview";
+        // Parent it to us first, ID it, then unparent it. So it inherits out transform.
+        GameObject obj = Utils.ClonePrefab( PreviewPrefab.main.gameObject, transform );
         Utils.IdentifyLocalTransform(obj);
         obj.transform.parent = transform.parent;
+        obj.name = gameObject.name + "-preview";
         reflectionPreview = obj.GetComponent<MeshFilter>();
     }
 
@@ -84,14 +83,13 @@ public class Reflectable : MonoBehaviour
         converter.Push( posHalf.polys, GetComponent<MeshFilter>().mesh );   // ~1ms
 
         // TODO we could just use the same mesh, but transform it to be reflected along the plane..
-
         ConvexPolygonMesh negHalf = posHalf.Clone();
         negHalf.Reflect( gun.GetReflectingPlane(), transform );
         converter.Push( negHalf.polys, reflectionPreview.mesh );
+        Debug.Log("pushed to preview");
     }
 
-
-    // Important that this is done in LateUpdate, since one-frame off could have players falling through
+    // Important that this is done in LateUpdate, since one-frame late could have players falling through
     public void LateUpdate()
     {
         // Update mesh collider

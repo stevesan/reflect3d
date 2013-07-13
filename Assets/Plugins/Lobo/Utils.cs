@@ -56,7 +56,7 @@ namespace Lobo
             obj.transform.localEulerAngles = new Vector3(0,0,0);
         }
 
-        public static GameObject ClonePrefab( GameObject prefab, Transform parent )
+        public static GameObject ClonePrefab( GameObject prefab, Transform parent = null )
         {
             GameObject clone = (GameObject)GameObject.Instantiate( prefab, prefab.transform.position, prefab.transform.rotation );
             clone.transform.parent = parent;

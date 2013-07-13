@@ -11,7 +11,6 @@ public class MirrorGun : MonoBehaviour
     //----------------------------------------
 
     public GameObject paintDot;
-    public GameObject sceneRoot;
 
     //----------------------------------------
     //  Private state
@@ -33,15 +32,23 @@ public class MirrorGun : MonoBehaviour
         state = "idle";
     }
 
+    GameObject GetSceneRoot()
+    {
+        return GameController.main.GetActiveLevel().gameObject;
+    }
+
     void EnterPreviewMode()
     {
-        foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
+        foreach( Reflectable target in GetSceneRoot().GetComponentsInChildren<Reflectable>() )
+        {
+            Debug.Log("fdsfd "+target.gameObject.name);
             target.OnReflectingBegin(this);
+        }
     }
 
     void ExitPreviewMode(bool commit)
     {
-        foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
+        foreach( Reflectable target in GetSceneRoot().GetComponentsInChildren<Reflectable>() )
             target.OnReflectingEnd(this, commit);
     }
 
@@ -50,32 +57,35 @@ public class MirrorGun : MonoBehaviour
         if( !Screen.lockCursor )
             return;
 
-        // Check button input
-        if( Input.GetMouseButtonDown(0) )
+        // These events can actually occur in the same frame, since the user
+        // can press and release really quick.
+        bool leftDown = Input.GetMouseButtonDown(0);
+        bool leftUp = Input.GetMouseButtonUp(0);
+
+        if( state == "idle" )
         {
-            if( state == "idle" )
+            // Check button input
+            if( leftDown && !leftUp )
             {
-                state = "preview";
+                // Don't enter preview mode yet, cuz the aim may be over invalid target
                 hadValidTarget = false;
-            }
-            else
-            {
-                ExitPreviewMode(true);
-                state = "idle";
+                state = "preview";
             }
         }
-        else if( Input.GetMouseButtonUp(0) )
+        else if( state == "preview" )
         {
-            if( state == "preview" )
+            if( !leftDown && leftUp )
             {
-                ExitPreviewMode(false);
+                if( hadValidTarget )
+                    ExitPreviewMode(false);
                 state = "idle";
             }
-        }
-        else if( Input.GetButtonDown("Commit") && state == "preview" )
-        {
-            ExitPreviewMode(true);
-            state = "idle";
+            else if( Input.GetButtonDown("Commit") )
+            {
+                if( hadValidTarget )
+                    ExitPreviewMode(true);
+                state = "idle";
+            }
         }
     }
 	
@@ -87,7 +97,7 @@ public class MirrorGun : MonoBehaviour
         if( Physics.Raycast( ray, out hit ) )
         {
             paintDot.SetActive(true);
-            paintDot.transform.position = hit.point + hit.normal*0.01f;
+            paintDot.transform.position = hit.point + hit.normal*0.1f;
             paintDot.transform.up = hit.normal;
 
             if( state == "preview" )
@@ -98,7 +108,7 @@ public class MirrorGun : MonoBehaviour
                 hadValidTarget = true;
 
                 reflectingPlane = new Plane( hit.normal, hit.point );
-                foreach( Reflectable target in sceneRoot.GetComponentsInChildren<Reflectable>() )
+                foreach( Reflectable target in GetSceneRoot().GetComponentsInChildren<Reflectable>() )
                     target.OnReflectingMotion(this);
             }
         }
