@@ -3,6 +3,7 @@ using System.Collections;
 
 public class Goal : MonoBehaviour
 {
+    public AudioClip getClip;
 
     void OnControllerColliderHit( ControllerColliderHit hit )
     {
@@ -10,6 +11,8 @@ public class Goal : MonoBehaviour
         if( player != null )
         {
             player.OnGetGoal(this);
+
+            AudioSource.PlayClipAtPoint( getClip, transform.position );
         }
     }
 }

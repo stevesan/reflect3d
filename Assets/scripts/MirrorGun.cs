@@ -40,10 +40,7 @@ public class MirrorGun : MonoBehaviour
     void EnterPreviewMode()
     {
         foreach( Reflectable target in GetSceneRoot().GetComponentsInChildren<Reflectable>() )
-        {
-            Debug.Log("fdsfd "+target.gameObject.name);
             target.OnReflectingBegin(this);
-        }
     }
 
     void ExitPreviewMode(bool commit)

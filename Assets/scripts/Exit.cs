@@ -11,7 +11,7 @@ public class Exit : MonoBehaviour
         if( targetLevel != null )
             label.text = targetLevel.displayName;
         else
-            label.text = "Return";
+            label.text = "";
     }
 
     void OnControllerColliderHit( ControllerColliderHit hit )
